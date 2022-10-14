@@ -1,0 +1,5 @@
+
+[ PID: \\19656 - \b'Code.exe' - \b'client.py - Hausarbeite_Hacking_with_Python - Visual Studio Code' ]
+
+[ PID: \\19656 - \b'Code.exe' - \b'client.py - Hausarbeite_Hacking_with_Python - Visual Studio Code' ]
+hallo [Space][Lshift]Mein [Space][Lshift]name [Space]ist [Space][Lshift]manuel[Lcontrol][C]

