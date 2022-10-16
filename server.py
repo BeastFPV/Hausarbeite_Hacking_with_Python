@@ -15,14 +15,16 @@ import pysftp
 from _thread import *
 
 #Global Variables
-
+host_sftp = "192.168.0.104"
+username_sftp = "desktop-722h3i8\manue"
+password_sftp = "Tennis12!"
 
 #Functions
 #------------------------Connection to FTPS server------------------------
 def ftps_connect():
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
-    ftps = pysftp.Connection(host="192.168.0.104", username="desktop-722h3i8\manue", password="Tennis12!", cnopts=cnopts)
+    ftps = pysftp.Connection(host=host_sftp, username=username_sftp, password=password_sftp, cnopts=cnopts)       #change this to your own SFTP server!
     return ftps
 
 def ftps_upload_file(ftps, file):
