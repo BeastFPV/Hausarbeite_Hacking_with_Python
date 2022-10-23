@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: python-sftp
+Version: 1.0.0
+Summary: Python SFTP Server connection client and server
+Home-page: https://github.com/BeastFPV/Hausarbeite_Hacking_with_Python
+Author: BeastFPV
+License: BSD 2-clause
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Researchers
+Classifier: Topic :: Security :: Hacking
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python :: 3.9
+
+UNKNOWN
+
